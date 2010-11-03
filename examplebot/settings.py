@@ -8,6 +8,8 @@ IRC_PORT = 6667
 #Channels that l33ty should be in
 IRC_CHANNELS = ["#testingbot",]
 
+ROOT_ROUTECONF = 'examplebot.routes'
+
 try:
     from localsettings import *
 except ImportError:

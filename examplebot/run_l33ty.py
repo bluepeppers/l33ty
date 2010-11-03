@@ -3,7 +3,8 @@
 
 import sys
 import os
+sys.path.append(os.path.abspath('..'))
 sys.path.append(os.path.abspath('.'))
 
-from l33ty import l33ty
-l33ty.run_leety()
+from l33ty import twisted_server
+twisted_server.run_leety()

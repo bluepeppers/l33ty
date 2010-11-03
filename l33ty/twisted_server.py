@@ -27,7 +27,11 @@ from twisted.application import internet, service
 from twisted.web import google, client
 from twisted.web.http_headers import Headers
 import settings
-from middleware import MiddlewareController
+from l33ty.core.middleware import MiddlewareController
+from l33ty.core.messages import Request
+from l33ty.core.exceptions import ImproperlyConfigured
+from l33ty.core.routeresolvers import RegexRouteResolver
+import logging
 
 MIDDLEWARE_CONTROLLER = MiddlewareController(settings)
 
@@ -64,6 +68,13 @@ class LeetyIRC(irc.IRCClient):
     ''' The nick name of the bot '''
     nickname = 'l33ty'
 
+    try:
+        root_routeconf = getattr(settings, "ROOT_ROUTECONF")
+    except AttributeError:
+        raise ImproperlyConfigured('Need ROOT_ROUTECONF in settings.')
+
+    root_route_resolver = RegexRouteResolver(root_routeconf)
+
     ''' After server has acknowledged the nick '''
     def signedOn(self):
         for chan in self.factory.channels:
@@ -78,35 +89,52 @@ class LeetyIRC(irc.IRCClient):
     
     ''' When a PM is recived '''
     def privmsg(self, user, channel, message):
-        nick, _, host = user.partition('!')
-        if channel != self.nickname and not message.startswith(self.nickname):
-            # We can LOG here :)
-            file = open('log', 'a')
-            file.writelines(nick+" "+datetime.datetime.now().strftime("%Y-%m-%d [%H:%M]")+" : "+message+"\n")
-            return
-        # Strip off any addressing. 
-        message = re.sub(
-            r'^%s[.,>:;!?]*\s*' % re.escape(self.nickname), '', message)
-        command, _, rest = message.partition(' ')
-        
-        # Get the function 
-        func = getattr(self, 'command_' + command, None)
-        
-        # IF not a defined function
-        if func is None:
-            self.msg(channel, "%s,I cant understand what %s means, but you can teach me, catch me @ http://github.com/hemanth/l33ty" % (nick,message))
-            return 
-        
-        d = defer.maybeDeferred(func, rest)
-        if channel == self.nickname:
-            args = [nick]
-        # If there is rediction request made in the bot query.
-        elif len(rest.split('>')) > 1:
-            args = [channel, rest.split('>')[1]]
+        #ignore messages from ourself
+        if user.split('!')[0] == getattr(settings, 'IRC_NICKNAME', '133ty'):
+            return message
+
+        req = Request(message, user, channel)
+        try:
+            func, kwargs = self.root_route_resolver.resolve(req)
+        except (ValueError, TypeError):
+            logging.warn('No route for message {0}'.format(message))
         else:
-            args = [channel, nick]
-        d.addCallbacks(self._send_message(*args), self._show_error(*args))
+            resp = func(req, **kwargs)
+            self.msg(resp.channel, resp.render())
+
         return message
+
+
+
+#        nick, _, host = user.partition('!')
+#        if channel != self.nickname and not message.startswith(self.nickname):
+#            # We can LOG here :)
+#            file = open('log', 'a')
+#            file.writelines(nick+" "+datetime.datetime.now().strftime("%Y-%m-%d [%H:%M]")+" : "+message+"\n")
+#            return
+#        # Strip off any addressing.
+#        message = re.sub(
+#            r'^%s[.,>:;!?]*\s*' % re.escape(self.nickname), '', message)
+#        command, _, rest = message.partition(' ')
+#
+#        # Get the function
+#        func = getattr(self, 'command_' + command, None)
+#
+#        # IF not a defined function
+#        if func is None:
+#            self.msg(channel, "%s,I cant understand what %s means, but you can teach me, catch me @ http://github.com/hemanth/l33ty" % (nick,message))
+#            return
+#
+#        d = defer.maybeDeferred(func, rest)
+#        if channel == self.nickname:
+#            args = [nick]
+#        # If there is rediction request made in the bot query.
+#        elif len(rest.split('>')) > 1:
+#            args = [channel, rest.split('>')[1]]
+#        else:
+#            args = [channel, nick]
+#        d.addCallbacks(self._send_message(*args), self._show_error(*args))
+#        return message
     
     def _send_message(self, target, nick=None):
         def callback(msg):
