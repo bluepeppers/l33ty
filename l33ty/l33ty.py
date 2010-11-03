@@ -26,13 +26,15 @@ from twisted.web.client import Agent
 from twisted.application import internet, service
 from twisted.web import google, client
 from twisted.web.http_headers import Headers
+import settings
 
 __author__ = "Hemanth HM <hemanth.hm@gmail.com>"
 __license__ = "GNU GPLV3"
 __version__ = "1.0" 
 
 ''' Server and the port where the bot is to be hosted '''
-HOST, PORT = 'irc.freenode.net', 6667
+HOST = getattr(settings, "IRC_HOST", "irc.freenode.net")
+PORT = getattr(settings, "IRC_PORT", 6667)
 
 ''' RPN calc map operator symbol tuple of # and function '''
 calc_operators = {
@@ -234,7 +236,7 @@ class LeetyIRC(irc.IRCClient):
 
 class LeetyIRCactory(protocol.ReconnectingClientFactory):
     protocol = LeetyIRC
-    channels = '#leetytest'
+    channels = getattr(settings, "IRC_CHANNELS", '#leetytest')
 
 if __name__ == '__main__':
     reactor.connectTCP(HOST, PORT, LeetyIRCactory())
