@@ -234,7 +234,7 @@ class LeetyIRC(irc.IRCClient):
 
 class LeetyIRCactory(protocol.ReconnectingClientFactory):
     protocol = LeetyIRC
-    channels = '#testingbot'
+    channels = '#leetytest'
 
 if __name__ == '__main__':
     reactor.connectTCP(HOST, PORT, LeetyIRCactory())
