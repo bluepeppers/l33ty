@@ -7,13 +7,17 @@ class Request(object):
         self.length = len(message)
         message = unicode(message)
 
-        bot_nickname = getattr(settings, 'IRC_NICKNAME', 'l33ty')
-        message = message.lstrip(bot_nickname).lstrip()
+        message = self.remove_greeting_from_message(message)
         self.msg = message
+        self.msg = self.msg.strip()
         self.user, _, self.host = user.partition('!')
         self.channel = channel
 
         self.time = time.time()
+
+    def remove_greeting_from_message(self, msg):
+        msg = msg.lstrip(getattr(settings, 'ACTIVATION_PREFIX', '|')).strip()
+        return msg
 
     def time_since_arrival(self):
         return time.time() - self.time

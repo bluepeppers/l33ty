@@ -10,6 +10,9 @@ IRC_CHANNELS = ["#testingbot",]
 
 ROOT_ROUTECONF = 'examplebot.routes'
 
+IRC_NICKNAME = 'l33ty'
+ACTIVATION_PREFIX = '|'
+
 try:
     from localsettings import *
 except ImportError:

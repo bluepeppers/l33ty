@@ -19,7 +19,7 @@ import datetime
 import BeautifulSoup
 import bsddb
 from twisted.internet import reactor, task, defer, protocol
-from twisted.python import log
+from twisted.python import log as _log
 from twisted.words.protocols import irc
 from twisted.web.client import getPage
 from twisted.web.client import Agent
@@ -32,6 +32,14 @@ from l33ty.core.messages import Request
 from l33ty.core.exceptions import ImproperlyConfigured
 from l33ty.core.routeresolvers import RegexRouteResolver
 import logging
+if getattr(settings, 'DEBUG', False):
+    log = logging.getLogger('root')
+    log.setLevel(logging.INFO)
+else:
+    log = logging.getLogger('root')
+    log.setLevel(logging.WARN)
+out = logging.StreamHandler(sys.stdout)
+log.addHandler(out)
 
 MIDDLEWARE_CONTROLLER = MiddlewareController(settings)
 
@@ -66,7 +74,7 @@ calc_operators = {
 
 class LeetyIRC(irc.IRCClient):
     ''' The nick name of the bot '''
-    nickname = 'l33ty'
+    nickname = getattr(settings, 'IRC_NICKNAME', 'l33ty')
 
     try:
         root_routeconf = getattr(settings, "ROOT_ROUTECONF")
@@ -86,12 +94,21 @@ class LeetyIRC(irc.IRCClient):
         kwargs = MIDDLEWARE_CONTROLLER.send('msg_out', user=user, message=message, length=length)
         return irc.IRCClient.msg(self, **kwargs)
 
+    def _raw_msg(self, user, message, length=None):
+        return irc.IRCClient.msg(self, user, message, length)
+
     
     ''' When a PM is recived '''
     def privmsg(self, user, channel, message):
+        log.info('{0} from {1} in {2}'.format(message, user, channel))
         #ignore messages from ourself
         if user.split('!')[0] == getattr(settings, 'IRC_NICKNAME', '133ty'):
             return message
+
+        #If we havn't been activated... don't activate!
+        if getattr(settings, 'ACTIVATION_PREFIX', False):
+            if not message.startswith(getattr(settings, 'ACTIVATION_PREFIX')):
+                return message
 
         req = Request(message, user, channel)
         try:
@@ -277,9 +294,10 @@ class LeetyIRCactory(protocol.ReconnectingClientFactory):
     protocol = LeetyIRC
     channels = getattr(settings, "IRC_CHANNELS", '#leetytest')
 
-def run_leety(log_out=sys.stdout):
+def run_leety():
     reactor.connectTCP(HOST, PORT, LeetyIRCactory())
-    log.startLogging(log_out)
+    observer = _log.PythonLoggingObserver()
+    observer.start()
     reactor.run()
 
 

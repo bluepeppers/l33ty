@@ -1,5 +1,13 @@
 import logging
 import sys
+import settings
+
+if getattr(settings, 'DEBUG', False):
+    log = logging.getLogger('debug')
+    log.setLevel(logging.INFO)
+else:
+    log = logging.getLogger('warn')
+    log.setLevel(logging.WARN)
 
 class MiddlewareController(object):
     supported_actions = ('msg_in', 'msg_out')
@@ -19,17 +27,17 @@ class MiddlewareController(object):
             __import__(container_name)
             container = sys.modules[container_name]
         except ImportError:
-            logging.warn('Could not import middleware %s' % middleware_location)
+            log.warn('Could not import middleware %s' % middleware_location)
             return
 
         middleware = getattr(container, name, None)
         if middleware is None:
-            logging.warn('Could not import middleware %s' % middleware_location)
+            log.warn('Could not import middleware %s' % middleware_location)
             return
 
 
         if not self._check_middleware_validity(middleware):
-            logging.warn('Middleware %s is not a valid piece of middleware' % middleware_location)
+            log.warn('Middleware %s is not a valid piece of middleware' % middleware_location)
             return
 
         self.middlewares.append(middleware)
@@ -45,7 +53,7 @@ class MiddlewareController(object):
 
     def send(self, action, **kwargs):
         if not action in self.supported_actions:
-            logging.warn('%s is a non supported middleware action' % action)
+            log.warn('%s is a non supported middleware action' % action)
 
         for middleware in self.middlewares:
             middleware_instance = middleware()
