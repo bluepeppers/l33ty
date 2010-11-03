@@ -6,7 +6,7 @@ IRC_HOST = "irc.freenode.net"
 IRC_PORT = 6667
 
 #Channels that l33ty should be in
-IRC_CHANNELS = ("#testingbot",)
+IRC_CHANNELS = ["#testingbot",]
 
 try:
     from localsettings import *
