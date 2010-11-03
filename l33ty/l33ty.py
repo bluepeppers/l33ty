@@ -27,6 +27,9 @@ from twisted.application import internet, service
 from twisted.web import google, client
 from twisted.web.http_headers import Headers
 import settings
+from middleware import MiddlewareController
+
+MIDDLEWARE_CONTROLLER = MiddlewareController(settings)
 
 __author__ = "Hemanth HM <hemanth.hm@gmail.com>"
 __license__ = "GNU GPLV3"
@@ -67,6 +70,11 @@ class LeetyIRC(irc.IRCClient):
             if not chan.startswith('#'):
                 chan = '#{0}'.format(chan)
             self.join(chan)
+
+    def msg(self, user, message, length=None):
+        kwargs = MIDDLEWARE_CONTROLLER.send('msg_out', user=user, message=message, length=length)
+        return irc.IRCClient.msg(self, **kwargs)
+
     
     ''' When a PM is recived '''
     def privmsg(self, user, channel, message):
