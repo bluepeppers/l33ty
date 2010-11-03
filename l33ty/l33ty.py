@@ -63,7 +63,8 @@ class LeetyIRC(irc.IRCClient):
 
     ''' After server has acknowledged the nick '''
     def signedOn(self):
-        self.join(self.factory.channels)
+        for chan in self.factory.channels:
+            self.join(chan)
     
     ''' When a PM is recived '''
     def privmsg(self, user, channel, message):
