@@ -239,12 +239,13 @@ class LeetyIRCactory(protocol.ReconnectingClientFactory):
     protocol = LeetyIRC
     channels = getattr(settings, "IRC_CHANNELS", '#leetytest')
 
-if __name__ == '__main__':
+def run_leety(log_out=sys.stdout):
     reactor.connectTCP(HOST, PORT, LeetyIRCactory())
-    log.startLogging(sys.stdout)
+    log.startLogging(log_out)
     reactor.run()
 
-elif __name__ == '__builtin__':
+
+if __name__ == '__builtin__':
     
     application = service.Application('LeetyIRCBot')
    
