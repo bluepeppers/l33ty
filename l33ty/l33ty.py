@@ -64,6 +64,8 @@ class LeetyIRC(irc.IRCClient):
     ''' After server has acknowledged the nick '''
     def signedOn(self):
         for chan in self.factory.channels:
+            if not chan.startswith('#'):
+                chan = '#{0}'.format(chan)
             self.join(chan)
     
     ''' When a PM is recived '''
