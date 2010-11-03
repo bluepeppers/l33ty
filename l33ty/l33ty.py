@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 ''' A PY IRC bot with functionalities like:
     * l33t translation 
     * Google I'm feeling lucky search 
